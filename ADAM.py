@@ -1,26 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Mar 23 12:49:12 2024
+Created on Sat Mar 30 19:53:59 2024
 
 @author: Alex Salce
 """
 
 import numpy as np
 import numpy.linalg as la
+import matplotlib.pyplot as plt
 
 
-class gdDataSARAH():
-    def __init__(self, description, A, b, gd_iter, batch_size,sarah_iter,epsilon=None):
+class gdDataADAM():
+    def __init__(self, description, A, b, maxit, alpha, beta1, beta2, epsilon=None):
         self.description = description
         self.A = A
         self.b = b
-        self.outer_iter = gd_iter        
-        self.batch_size = batch_size
+        self.maxit = maxit        
+        self.alpha = alpha
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.maxit = maxit
         self.epsilon = epsilon
         self.n = self.A.shape[0]
         self.nfeat = self.A.shape[1]
         self.Ab = np.c_[A.reshape(self.n, -1), b.reshape(self.n, 1)]
-        self.sarah_iter = sarah_iter
+        
     def Lip(self, A=None, b=None):
         A = self.A if A is None else A
         b = self.b if b is None else b
@@ -50,70 +54,81 @@ class gdDataSARAH():
         randb = np.expand_dims(self.b[i], axis=0)
         grad = self.GradLS(x,randA,randb)
         return grad
-
+    
+    
 def objective_function(x):
     return np.linalg.norm(S@x - t)**2
 
-    
-outer_iter = 100
-inner_iter = 200
+max_iter = 30000
 
+    
 # Define Parameters
-epsilon = 1e-2
+
+alpha = 0.1
+beta1 = 0.9
+beta2 = 0.999
+epsilon = 1e-8
 seed = 123
 batchsize = 1
 
 np.random.seed(seed)
 
-d = 5
+d = 1
 n = 100
 noise = np.random.rand(d,1)
 s = np.random.rand(n,d) * 10 - 5          
 t = s @ noise + np.random.randn(n,1)       #response (b)
 S = np.column_stack((s, np.ones(n)))    #data (A)
 x0 = np.zeros((d+1,1))
-# t = s @ noise       #response (b)  NO NOISE BIAS
-# S = s    #data (A) NO NOISE BIAS
-# x0 = np.zeros((d,1))  #NO NOISE BIAS
 
-dataSet1 = gdDataSARAH("Test data 1", S, t, outer_iter, 1, inner_iter, epsilon)
+dataSet1 = gdDataADAM("Test data 1", S, t,max_iter,alpha,beta1,beta2,epsilon)
 
 myData = dataSet1
 
 
-
-#SARAH algorithm
+#ADAM algorithm
 
 #Least Squares Loss
-wold = np.copy(x0)
-eta = myData.Lip()
+w = np.copy(x0)
+m = np.zeros((d+1,1))
+v = np.zeros((d+1,1))
+maxit = 5000
+t = 0
 w_list = []
 counter = 0
-for _ in range (myData.outer_iter):
-    vold = myData.AvgGradLS(wold)
-    w = wold.copy() - eta * vold.copy() 
-    for _ in range(0,myData.sarah_iter):
-        fi_wt = myData.sGradLS(w,myData.A,myData.b)
-        fi_wt_old = myData.sGradLS(wold,myData.A,myData.b)
-        vnew = fi_wt - fi_wt_old + vold
-        w += -eta*np.copy(vnew)
-        vold = np.copy(vnew)
-        w_list.append(w)
-    i = np.random.randint(0,len(w_list))
-    wold = np.copy(w_list[i])
-    w_list = []
+# alpha = myData.Lip()
 
-# checks
-objective_function(w)
-la.norm(myData.GradLS(w))
+while(la.norm(myData.GradLS(w))>myData.epsilon):
+    t += 1
+    if t > myData.maxit:
+        print("max iterations exceeded")
+        break
+    g = myData.sGradLS(w)   #update stochastic gradient
+    m = myData.beta1 * m + (1 - myData.beta1) * g    #update biased first moment est
+    v = myData.beta2 * v + (1 - myData.beta2) * g**2    #update biased second raw moment est
+    mhat = m/(1 - myData.beta1**t)  #bias corrected first moment est
+    vhat = v/(1 - myData.beta2**t)  #bias corrected second moment est
+    w = w - ( myData.alpha * mhat / (np.sqrt(vhat) + epsilon) )
+    
+    #stash for graphs
+    w_list.append(w)
 
 
-# standard gd loop to verify functionality
-# np.random.seed(123)
-# w = x0.copy()
-# while(la.norm(myData.GradLS(w))>myData.epsilon):
-#     w += -myData.Lip(myData.A, myData.b) * myData.GradLS(w)
-# objective_function(w)
-# la.norm(myData.GradLS(w))
-  
-  
+#PLOTS
+# gen graph data
+obj_vals = []
+grad_vals = []
+
+for w in w_list:
+    obj_vals.append(objective_function(w))
+    grad_vals.append(la.norm(myData.GradLS(w)))
+    
+
+from matplotlib import pyplot as plt
+
+plt.plot(grad_vals, 'o')
+plt.show()
+
+# vec = np.linspace(0, len(w_list))
+# plt.figure()
+plt.plot(w_list)  # plot the function values
