@@ -7,6 +7,7 @@ Created on Sat Mar 23 12:49:12 2024
 
 import numpy as np
 import numpy.linalg as la
+import matplotlib.pyplot as plt
 
 
 class gdDataSARAH():
@@ -88,10 +89,12 @@ myData = dataSet1
 wold = np.copy(x0)
 eta = myData.Lip()
 w_list = []
+obj = []
 counter = 0
 for _ in range (myData.outer_iter):
     vold = myData.AvgGradLS(wold)
-    w = wold.copy() - eta * vold.copy() 
+    w = wold.copy() - eta * vold.copy()
+    obj.append(objective_function(w))
     for _ in range(0,myData.sarah_iter):
         fi_wt = myData.sGradLS(w,myData.A,myData.b)
         fi_wt_old = myData.sGradLS(wold,myData.A,myData.b)
@@ -99,6 +102,7 @@ for _ in range (myData.outer_iter):
         w += -eta*np.copy(vnew)
         vold = np.copy(vnew)
         w_list.append(w)
+        obj.append(objective_function(w))
     i = np.random.randint(0,len(w_list))
     wold = np.copy(w_list[i])
     w_list = []
@@ -107,6 +111,9 @@ for _ in range (myData.outer_iter):
 objective_function(w)
 la.norm(myData.GradLS(w))
 
+
+plt.plot(np.log(obj))
+plt.show()
 
 # standard gd loop to verify functionality
 # np.random.seed(123)
