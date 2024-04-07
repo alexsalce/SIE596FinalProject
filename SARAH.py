@@ -27,6 +27,12 @@ class gdDataSARAH():
         L = 2 * la.norm(A)**2
         eta = 1/L
         return eta
+    def muLS(self, A=None, b=None):
+        A = self.A if A is None else A
+        b = self.b if b is None else b
+        hess = 2*A.T @ A
+        mineig = min(np.linalg.eig(hess)[0])
+        return mineig
     def objective_function_ls(self,x,A=None,b=None):
         A = self.A if A is None else A
         b = self.b if b is None else b
@@ -52,22 +58,28 @@ class gdDataSARAH():
 # Fixing seed to generate the same random number every time
 np.random.seed(123)
 
-n = 1000  # Set the size of the matrix
+n = 10000  # Set the size of the matrix
 m = 50  # Set the size of the matrix
 x = np.zeros((m, 1))  # Initial point
+# x = 50*np.ones((m, 1))  # Initial point
 A = np.random.randn(n, m)  # Defining matrix A
 A = A / np.linalg.norm(A)
 b = A@(np.random.randn(m, 1)) + np.random.randn(n, 1)  # Defining vector b
-outer_loop_iter = 100
+outer_loop_iter = 5
 epochs = 1
-inner_loop_iter = 500 # Number of iterations
+inner_loop_iter = 400 # Number of iterations
 L = 2 * np.linalg.norm(A) ** 2
 vec = []
 batch_size = 1
-eta = 0.1/L
+eta = 1/(2*L)
+
+
+
 
 myData = gdDataSARAH(A, b, outer_loop_iter, inner_loop_iter, batch_size)
 
+mu = myData.muLS()
+sigmam = 1/(mu * eta* (inner_loop_iter+1)) + eta * L / (2-(eta*L))
 
 #initialize SARAH algorith parameters
 wold = np.copy(x)
