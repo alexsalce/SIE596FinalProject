@@ -24,8 +24,7 @@ class gdDataSARAH():
         A = self.A if A is None else A
         b = self.b if b is None else b
         L = 2 * la.norm(A)**2
-        eta = 1/L
-        return eta
+        return L
     def muLS(self, A=None, b=None):
         A = self.A if A is None else A
         b = self.b if b is None else b
@@ -49,7 +48,8 @@ class gdDataSARAH():
     def GradLS(self, x, A=None, b=None):
         A = self.A if A is None else A
         b = self.b if b is None else b
-        grad = (2 * self.n / len(b)) *	A.T @ (A  @ x - b)
+        # grad = (2 * self.n / len(b)) *	A.T @ (A  @ x - b)
+        grad = 2 *	A.T @ (A  @ x - b)
         return grad
     
 
