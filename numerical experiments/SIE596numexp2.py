@@ -153,7 +153,61 @@ for _ in range(outer_loop_iter):
 
 sarah_end = time.time()
 sarah_time = sarah_end - sarah_start
-print(sarah_time, " seconds to run SARAH")          
+print(sarah_time, " seconds to run SARAH")    
+
+
+#         _       _          _       _           _        
+#        / /\    /\ \    _ / /\     /\ \        /\ \      
+#       / /  \   \ \ \  /_/ / /    /  \ \      /  \ \     
+#      / / /\ \__ \ \ \ \___\/    / /\ \ \    / /\ \_\    
+#     / / /\ \___\/ / /  \ \ \   / / /\ \_\  / / /\/_/    
+#     \ \ \ \/___/\ \ \   \_\ \ / / /_/ / / / / / ______  
+#      \ \ \       \ \ \  / / // / /__\/ / / / / /\_____\ 
+#  _    \ \ \       \ \ \/ / // / /_____/ / / /  \/____ / 
+# /_/\__/ / /        \ \ \/ // / /\ \ \  / / /_____/ / /  
+# \ \/___/ /          \ \  // / /  \ \ \/ / /______\/ /   
+#  \_____\/            \_\/ \/_/    \_\/\/___________/    
+                                                        
+#         ___                              __    __                     
+#        /\_ \                          __/\ \__/\ \                    
+#    __  \//\ \      __     ___   _ __ /\_\ \ ,_\ \ \___     ___ ___    
+#  /'__`\  \ \ \   /'_ `\  / __`\/\`'__\/\ \ \ \/\ \  _ `\ /' __` __`\  
+# /\ \L\.\_ \_\ \_/\ \L\ \/\ \L\ \ \ \/ \ \ \ \ \_\ \ \ \ \/\ \/\ \/\ \ 
+# \ \__/.\_\/\____\ \____ \ \____/\ \_\  \ \_\ \__\\ \_\ \_\ \_\ \_\ \_\
+#  \/__/\/_/\/____/\/___L\ \/___/  \/_/   \/_/\/__/ \/_/\/_/\/_/\/_/\/_/
+#                    /\____/                                            
+#                    \_/__/                                             
+
+svrg_start = time.time()
+
+#multiple outer loop SARAH
+np.random.seed(123)
+myData = SARAHdata
+wold = np.copy(x)
+w_list_svrg = []
+svrg_obj_plot = []
+
+for _ in range(outer_loop_iter):
+    
+    w = wold
+    vold = myData.GradLS(w)
+    w = wold - eta_sarah * vold
+    w0 = np.copy(w)
+    
+    for i in range(inner_loop_iter):
+        i = np.random.permutation(myData.n)[:myData.batch]
+        vnew = myData.sGradLS(w, i) - myData.sGradLS(w0, i) + vold
+        wold = np.copy(w)
+        w_list_svrg.append(wold)
+        # w = w - (eta/np.sqrt(i+1)) * vnew
+        w = w - eta_sarah * vnew
+        svrg_obj_plot.append(myData.objective_function_ls(w))
+    
+    wold = w_list_svrg[ np.random.permutation(range(0,len(w_list_svrg)))[0] ]
+
+svrg_end = time.time()
+svrg_time = svrg_end - svrg_start
+print(svrg_time, " seconds to run SVRG")          
         
 
 #  ______  ____    ______              
@@ -264,6 +318,12 @@ print(gd_time, " seconds for gd to converge to 1e-2")
                                              
 
 plt.plot(sarah_obj_plot)
+plt.plot(svrg_obj_plot)
 plt.plot(adam_obj_plot)
 plt.plot(gd_obj_plot)
+plt.show()
+
+#svrg and sarah delta
+svrg_saraa_delta = np.array(svrg_obj_plot) - np.array(sarah_obj_plot)
+plt.plot(svrg_saraa_delta)
 plt.show()
