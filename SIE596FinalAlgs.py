@@ -23,7 +23,12 @@ class gdDataSARAH():
     def LipLS(self, A=None, b=None):
         A = self.A if A is None else A
         b = self.b if b is None else b
-        L = 2 * la.norm(A)**2
+        # L = 2 * la.norm(A)**2
+        L=0
+        for i in range(len(A)):
+            Li = 2 * la.norm(A[i,:])**2
+            if Li>L:
+                L = Li
         return L
     def muLS(self, A=None, b=None):
         A = self.A if A is None else A
@@ -43,6 +48,7 @@ class gdDataSARAH():
         i = indices
         Abatch = A[i, :]
         bbatch = b[i]
+        # grad = self.n * self.GradLS(x,Abatch,bbatch)
         grad = self.GradLS(x,Abatch,bbatch)
         return grad
     def GradLS(self, x, A=None, b=None):
