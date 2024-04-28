@@ -60,19 +60,19 @@ Stochastic optimizers are a class of algorithms that have become prevalent in re
 \caption{$b=1$ stochastic, $n>b>1$ minibatch}
 \end{equ}
 
-A drawback of a stochastic or minibatch approach is the inherent variance in gradient updates due to the random gradient selection in their computations, and subsequent parameter updates over each timestep.  For algorithms utilizing these approaches, controlling variance can be critical to guarantee convergence, which has motivated variance reduction techniques in the development of new stochastic optimization algorithms.
+A drawback of a stochastic or minibatch approach is the inherent variance in parameter updates due to the random gradient selection in their computations, and subsequent updates over each timestep.  For algorithms utilizing these approaches, controlling variance can be critical to guaranteeing convergence, which has motivated variance reduction techniques in the development of new stochastic optimization algorithms.
 
 The subjects of this paper, ADAM and SARAH, are stochastic optimizers that utilize stochastic/minibatch gradients with variance reduction techniques.  Although the two algorithms are fundamentally different in their approaches, they both utilize recursive accumulated gradient information for variance reduction.  
 
 
 \subsection{Applications} 
-The ADAM optimizer is one of the most popular optimizers in a variety of ML frameworks including deep learning, neural networks, natural language processing, and generative adversarial networks, to name a few.  These applications benefit from ADAM’s strengths against other optimizers; it is fast, requires little hyperparameter tuning, performs well with sparse gradients, and can be applied to stochastic objective functions.  Further, it has proven convergence for convex objective functions, as well as demonstrated convergence for nonconvex objectives (He et al., 2023) \cite{heconvergence}.  The success of ADAM in practice has motivated variants like AdaMax, which has also become popular in sparse dataset applications.  ADAM, AdaMax, and other ADAM methods are built-in to the TensorFlow Keras package \cite{tensorflow}
+The ADAM optimizer a popular optimizer in a variety of machine learning frameworks including deep learning, neural networks, natural language processing, and generative adversarial networks, to name a few.  These applications benefit from ADAM’s strengths against other optimizers; it is fast, requires little hyperparameter tuning, performs well with sparse gradients, and can be applied to stochastic objective functions.  Further, it has proven convergence for convex objective functions, as well as demonstrated convergence for nonconvex objectives (He et al., 2023) \cite{heconvergence}.  The success of ADAM in practice has motivated variants like AdaMax, which has also become popular in sparse dataset applications.  ADAM, AdaMax, and other ADAM variants are built-in to the TensorFlow Keras package \cite{tensorflow}
 
-SARAH is a direct modification of SVRG, however does not seem to be used as widely in practice as SVRG.  While speculation as to why is not worthwhile, it is noteworthy that SARAH’s variance reduction technique utilizes a biased methodology, where SVRG is unbiased.  Still, there is a fair amount of research available for futher modifications of SARAH.  For applications, SARAH can be a direct substitute for SVRG with only some updated parameter tuning considerations, so it can be utilized for a very large variety of applications as a SVRG replacement.
+SARAH is a direct modification of SVRG, however does not seem to be used as widely in practice as SVRG.  While speculation as to why is not worthwhile, it is noteworthy that SARAH’s variance reduction technique utilizes a biased methodology, where SVRG is unbiased.  Still, there is a fair amount of research available for futher modifications of SARAH.  In practice, SARAH can be a direct substitute for SVRG with only some updated parameter tuning considerations, so it can be utilized for a very large variety of applications as a SVRG replacement.
 
 \subsection{ Literature review}
 
-ADAM, “ADAptive Moment estimation”, was initially proposed in the paper \textit{Adam: A method for stochastic optimization} (Kingma and Ba, 2017) \cite{kingma}.  This paper was scrutinized for its proofs of convergence for ADAM and whether ADAM was really advantageous over stochastic gradient descent (SGD).  Further, some examples of ADAM diverging under its stated assumptions have been identified \cite{reddidivergence}.  In 2022, \textit{Provable Adaptivity In ADAM} by (Wang et al., 2022) \cite{wangprovable} proposed a “relaxed” smoothness condition that addressed some shortcomings of the original theoreticall anlaysis.  Another paper, \textit{An improvement of the convergence proof of the ADAM-Optimizer} (Bock et al., 2018) \cite{inproceedings} corrected some errors in the original proof.  Still, ADAM remains very popular despite some of the original paper's theoretical shortcomings. 
+ADAM, “ADAptive Moment estimation”, was initially proposed in the paper \textit{Adam: A method for stochastic optimization} (Kingma and Ba, 2017) \cite{kingma}.  This paper was scrutinized for its proofs of convergence for ADAM and whether ADAM was really advantageous over stochastic gradient descent (SGD).  Further, some examples of ADAM diverging under its stated assumptions have been identified (Reddi et al., 2019) \cite{reddidivergence}.  \textit{Provable Adaptivity In ADAM} (Wang et al., 2022) \cite{wangprovable} proposed a “relaxed” smoothness condition that addressed some shortcomings of the original theoretical anlaysis.  Another paper, \textit{An improvement of the convergence proof of the ADAM-Optimizer} (Bock et al., 2018) \cite{inproceedings} corrected some errors in the original proof.  Still, ADAM remains very popular despite some of the original paper's theoretical shortcomings. 
 
 SARAH, “StochAstic Recursive grAdient algoritHm”, was initially proposed in the paper \textit{Sarah: A novel method for machine learning problems using stochastic recursive gradient} by (Nguyen et al., 2017) \cite{nguyen}.  A follow on paper including  one of the original authors, \textit{Random-reshuffled sarah does not need full gradient computations} (Beznosikov and M. Takáč, 2022) \cite{Beznosikov} demonstrates that, utilizing a random reshuffling technique, SARAH can be modified to eliminate full gradient computations entirely.  \textit{SARAH-M}, (Yang, 2024) \cite{sarahm}, explores the incorporation of momentum with the SARAH algorithm, similar to ADAM.  Examples like this, among others, indicate an interest in the algorithm despite not being a clearly preferred optimizer over SVRG or similar methods.
 
@@ -92,12 +92,12 @@ In basic terms, the steps that are similar to momentum utilize an exponential we
 
 \subsubsection{Bias}
 
-The bias-correction differentiates ADAM from RMSProp and can be attributed to it's advantageous performance with sparse data. The bias term for the second moment estimate $v_{t}$ by selecting $v_{0}=\textbf{0}$ can be derived by taking the expectation of the term at time $t$ (omitting calculation steps).
+The bias-correction step differentiates ADAM from RMSProp (which on its own does not correct for bias) and can be attributed to its advantageous performance with sparse data. Kingma and Ba derive the bias term for the second moment estimate $v_{t}$ by setting $v_{0}=\textbf{0}$ and taking the expectation of the term at time $t$. Omitting calculation steps, they arrive at the following.
 \[
 \mathbb{E}[v_{t}]=\mathbb{E}[g_{t}^{2}]\cdot(1-\beta_{2}^{t})+\zeta
 \]
 
-Where $\zeta$ is assumed to be small since $\beta_{2}$ should be selected to assign very small weights to gradients far enough in the past.  The proof given in the paper also applies to the first moment estimate.  Hence, the first  and second moment bias correction terms are incorporated by dividing the respective estimates by the $(1-\beta_{1,2}^t)$ term in Algorithm \ref{alg:adam}, and giving  $\mathbb{E}[\hat{m}_{t}]=\mathbb{E}[g_{t}]$ and $\mathbb{E}[\hat{v}_{t}]=\mathbb{E}[g_{t}^{2}]$.
+Where $\zeta$ is assumed to be small since $\beta_{2}$ should be selected to assign very small weights to gradients far enough in the past.  The proof given in the paper also applies to the first moment estimate.  Hence, the first  and second moment bias correction terms are incorporated by dividing the respective estimates by the $(1-\beta_{1,2}^t)$ term in Algorithm \ref{alg:adam}, giving  $\mathbb{E}[\hat{m}_{t}]=\mathbb{E}[g_{t}]$ and $\mathbb{E}[\hat{v}_{t}]=\mathbb{E}[g_{t}^{2}]$.
 
 \subsubsection{Convergence}
 
@@ -126,7 +126,7 @@ R(T)\leq\frac{D^{2}}{2\eta(1-\beta_{1})}\sum_{i=1}^{d}\sqrt{T\hat{v}_{T,i}}+\fra
 \]
 \end{theorem}
 
-In simple terms, the proximity of $f_{t}(x_{t}$ to the optimum is bounded by tunable parameters and constant bounds based on the data. Under the assumptions of $f_{t}$ from Theorem \ref{thm:adamregbound}, the following convergence follows.
+In simple terms, the proximity of $f_{t}(x_{t})$ to the optimum is bounded by tunable parameters and constant bounds based on the data. Under the assumptions of $f_{t}$ from Theorem \ref{thm:adamregbound}, the following convergence follows.
 
 %\begin{corollary}\label{cor:regret}
 %Assume that the function $f_t$ has bounded gradients, $|| \nabla f_{t}(x)||_{2} \leq G$, $|| \nabla f_{t}(x)||_{\infty} \leq G_{\infty}$ for all $x \in \mathbb{R}^{d}$ and distance between any $x_t$ generated by ADAM is bounded, $||x_{n} - x_{m}||_{2} \leq D$, $||x_{n} - x_{m}||_{\infty} \leq D_{\infty}$ for any $m,n \in \{1,...,T\}$.  ADAM achieves the following guarantee, for all $T \geq 1$.
@@ -140,7 +140,7 @@ $\mathcal{O}\left(\frac{1}{\sqrt{T}}\right)$ is the best theoretical convergence
 
 
 \subsection{SARAH (StochAstic Recursive grAdient algoritHm), see Algorithm \ref{alg:sarah} in Appendix}
-Methodology in this section is drawn from Nguyen, Liu, Scheinberg, and Takáč \textit{SARAH: A Novel Method for Machine Learning Problems Using Stochastic Recursive Gradient} (Nguyen, Liu, Scheinberg, and Takáč, 2017)  \cite{nguyen}.
+Methodology in this section is drawn from \textit{SARAH: A Novel Method for Machine Learning Problems Using Stochastic Recursive Gradient} (Nguyen, Liu, Scheinberg, and Takáč, 2017)  \cite{nguyen}.
 
 The SARAH algorithm is a stochastic optimizer that converges for convex L-smooth objectives $f_{i}$ with some theoretical advantages over similar methods like SAG, SAGA, and SVRG. It is most similar to SVRG, using an identical outer loop step and a modified inner loop that uses recursive gradient information rather than using only the outer loop gradient at each inner loop iterate.
 
@@ -232,7 +232,7 @@ Both methods converge with rate $\mathcal{O}((n+L/\mu)\log(1/\epsilon))$, howeve
 \section{Numerical Experiments}\label{sec:num}
 
 The purpose of the numerical experiment will be to evaluate general performance of ADAM and SARAH on real data and to illustrate a bias-variance tradeoff between SVRG and SARAH.
-We use the "Wine Quality" \cite{winequality} dataset from the UC Irvine Machine Learning Repository. The data are measurements of wine characteristics (features) used to predict wine quality scores. There are $n=6497$ instances and $m=11$ features. The experiements will use a simple least squares linear regression objective, assuming a system with data $A$ and response $b$ is of the form $Ax=b$.
+We use the "Wine Quality" dataset from the UC Irvine Machine Learning Repository \cite{winequality}. The data are measurements of wine characteristics (features) used to predict wine quality scores. There are $n=6497$ instances and $m=11$ features. The experiements will use a simple least squares linear regression objective, assuming a system with data $A$ and response $b$ is of the form $Ax=b$.
 \[
 \underset{x}{\text{min}}||Ax-b||^{2}
 \]
@@ -291,7 +291,7 @@ $\beta_{1}=0.9,\beta_{2}=0.999,\alpha=0.001$, $batch=10$ & 38.6s & $\eta=\frac{1
 \end{figure}
 %--------------------------------------------------------------
 
-See Figures \ref{fig1} and \ref{fig2} for settings and computation time. The two examples chosen illustrate some high level takeaways. In terms of computational performance, both ADAM and SARAH are virtually identical to SVRG, though ADAM can become slightly slower for increased batch sizes. SARAH and SVRG are limited in flexibility for learning rate with this data since $L$ is large and learning rate is $\mathcal{O}(\frac{1}{L})$. Both are descending, but are moving extremely slowly toward $x^*$, and the larger learning rate for SARAH hardly presents an advantage. We can see benefit of the adaptive learning rate of ADAM for both Exp A and B; it is moving toward it much faster and it continues to descend as iterations increase ($||x_t-x^*||$ vs. epochs).
+See Figures \ref{fig1} and \ref{fig2} for settings and computation time. The two examples chosen illustrate some high level takeaways. In terms of per-iteration computational performance, both ADAM and SARAH are virtually identical to SVRG, though ADAM can become slightly slower for increased batch sizes. SARAH and SVRG are limited in flexibility for learning rate with this data since $L$ is large and learning rate is $\mathcal{O}(\frac{1}{L})$. Both are descending, but are moving extremely slowly toward $x^*$, and the larger learning rate for SARAH hardly presents an advantage. We can see benefit of the adaptive learning rate of ADAM for both Exp A and B; it is moving toward it much faster and it continues to descend as iterations increase ($||x_t-x^*||$ vs. epochs).
 
 Comparing SARAH and SVRG, we run the inner loop for half an epoch  in Exp. A and for 30 epochs in Exp. B.  The parameter choice in Exp. B adheres with Equation \ref{eq:sarvar}. Note that for this data, the iterations required for an $\epsilon$ accurate convergence with SARAH, for a reasonable choice of $\epsilon$, was prohibitive. In both Exp. A and B, $||x_t - x_{t-1}||$ is clearly smoother for SARAH than SVRG, however we observe that the number of effective passes over the data in the inner loop can matter. In both the $||Ax_t-b||$ and $||x_t-x^*||$ plots, SARAH will stray away from the optimal solution due to bias after around 4 epochs.  It is ultimately corrected by the second outer loop step, but we can see how the biased steps of the inner loop can cause SARAH drift, whereas SVRG continues to descend. As is the reality of statistics, we are trading variance for bias.
 
